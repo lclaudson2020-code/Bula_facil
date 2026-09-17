@@ -25,12 +25,22 @@ async function buscarMedicamento() {
         // Converte a resposta da API de JSON para um objeto JavaScript legível
         const dados = await resposta.json();
 
-        // Mapeia o array de seções da bula para gerar blocos HTML dinamicamente (.map)
-        let secoesHtml = dados.bula.secoes.map(sec => `
-            <div class="secao-titulo">${sec.titulo}</div>
-            <p><strong>Resumo Simples:</strong> ${sec.resumo_simples}</p>
-            <p style="font-size: 14px; color: #555;"><em>Texto oficial:</em> ${sec.conteudo_oficial}</p>
-        `).join(''); // Junta todos os blocos gerados em uma única string HTML
+        // Verifica se existem seções de bula cadastradas para este medicamento
+        let secoesHtml = "";
+        if (dados.bula.secoes && dados.bula.secoes.length > 0) {
+            secoesHtml = dados.bula.secoes.map(sec => `
+                <div class="secao-titulo">${sec.titulo}</div>
+                <p><strong>Resumo Simples:</strong> ${sec.resumo_simples}</p>
+                <p style="font-size: 14px; color: #555;"><em>Texto oficial:</em> ${sec.conteudo_oficial}</p>
+            `).join('');
+        } else {
+            // Mensagem amigável caso o remédio venha da Anvisa mas não tenha bula detalhada
+            secoesHtml = `
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; color: #6c757d; margin-top: 15px; border: 1px dashed #ced4da;">
+                    <p style="margin: 0;">📄 <strong>Bula detalhada não cadastrada.</strong> Este medicamento foi localizado através do registro oficial da Anvisa.</p>
+                </div>
+            `;
+        }
 
         // Injeta o HTML estruturado com os dados reais do banco dentro da div de resultado
         resultadoDiv.innerHTML = `
@@ -39,13 +49,13 @@ async function buscarMedicamento() {
             <p><strong>Fabricante:</strong> ${dados.medicamento.fabricante}</p>
             <hr style="border: 0; border-top: 1px solid #e1e8ed; margin: 15px 0;">
             ${secoesHtml}
-            <div class="aviso-fonte">
+            <div class="aviso-fonte" style="margin-top: 15px;">
                 Fonte: ${dados.bula.fonte} | Atualizado em: ${dados.bula.data_atualizacao}
             </div>
         `;
 
     } catch (erro) {
         // Caso ocorra qualquer erro (pesquisa inválida ou API fora do ar), exibe mensagem amigável
-        resultadoDiv.innerHTML = "<p style='color: #e74c3c;'>Medicamento não encontrado no banco de dados. Tente pesquisar por 'Paracetamol'.</p>";
+        resultadoDiv.innerHTML = "<p style='color: #e74c3c;'>Medicamento não encontrado no banco de dados. Tente pesquisar por 'Paracetamol' ou 'Ibuprofeno'.</p>";
     }
 }

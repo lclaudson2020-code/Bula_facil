@@ -29,11 +29,11 @@ def home():
 
 @app.get("/medicamentos/{nome}")
 def buscar_medicamento(nome: str):
-    """Busca um medicamento pelo nome no banco de dados, incluindo sua bula e seções."""
+    """Busca um medicamento pelo nome no banco de dados, lidando com itens que ainda não possuem bula."""
     conexao = conectar()
     cursor = conexao.cursor()
 
-    # 1. Procura o medicamento (usando LIKE para busca parcial)
+    # 1. Procura o medicamento
     cursor.execute("""
         SELECT m.id, m.nome, m.principio_ativo, m.fabricante, m.apresentacao,
                b.id as bula_id, b.tipo_bula, b.fonte, b.data_atualizacao
@@ -48,17 +48,19 @@ def buscar_medicamento(nome: str):
         conexao.close()
         raise HTTPException(status_code=404, detail="Medicamento não encontrado.")
 
-    # 2. Busca as seções da bula vinculadas a esse medicamento
-    cursor.execute("""
-        SELECT titulo, conteudo_oficial, resumo_simples
-        FROM secoes_bula
-        WHERE bula_id = ?
-    """, (med["bula_id"],))
-    
-    secoes = [dict(row) for row in cursor.fetchall()]
+    # 2. Busca as seções apenas se o medicamento tiver uma bula vinculada
+    secoes = []
+    if med["bula_id"]:
+        cursor.execute("""
+            SELECT titulo, conteudo_oficial, resumo_simples
+            FROM secoes_bula
+            WHERE bula_id = ?
+        """, (med["bula_id"],))
+        secoes = [dict(row) for row in cursor.fetchall()]
+
     conexao.close()
 
-    # 3. Retorna a resposta organizada em formato JSON
+    # 3. Retorna a resposta organizada
     return {
         "medicamento": {
             "id": med["id"],
@@ -68,9 +70,9 @@ def buscar_medicamento(nome: str):
             "apresentacao": med["apresentacao"]
         },
         "bula": {
-            "tipo": med["tipo_bula"],
-            "fonte": med["fonte"],
-            "data_atualizacao": med["data_atualizacao"],
+            "tipo": med["tipo_bula"] if med["bula_id"] else "Bula não cadastrada",
+            "fonte": med["fonte"] if med["bula_id"] else "Catálogo Anvisa (Dados Gerais)",
+            "data_atualizacao": med["data_atualizacao"] if med["bula_id"] else "N/A",
             "secoes": secoes
         }
     }
