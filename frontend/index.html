@@ -18,10 +18,10 @@
             <p>Consulte informações de medicamentos de forma simples e segura.</p>
         </header>
 
-        <!-- Caixa de pesquisa contendo o input de texto e o botão -->
+       <!-- Caixa de pesquisa contendo o input de texto e o botão -->
         <div class="search-box">
-            <!-- Campo onde o usuário digita o nome do medicamento -->
-            <input type="text" id="medicamentoInput" placeholder="Ex: Paracetamol" />
+            <!-- Adicionamos o onkeydown para detectar quando a tecla Enter for pressionada -->
+            <input type="text" id="medicamentoInput" placeholder="Ex: Paracetamol" onkeydown="if(event.key === 'Enter') buscarMedicamento()" />
             <!-- Botão que aciona a função JavaScript de busca -->
             <button onclick="buscarMedicamento()">Pesquisar</button>
         </div>

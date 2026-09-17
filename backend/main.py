@@ -1,8 +1,18 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import os
 
 app = FastAPI(title="Bula Fácil API", version="0.1")
+
+# Configuração do CORS (Permite que o Frontend na porta 5500 acesse a API)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite requisições de qualquer origem (ótimo para desenvolvimento)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos os headers
+)
 
 # Caminho para o banco de dados criado na pasta data/
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "bula_facil.db")
@@ -23,7 +33,7 @@ def buscar_medicamento(nome: str):
     conexao = conectar()
     cursor = conexao.cursor()
 
-    # 1. Procura o medicamento
+    # 1. Procura o medicamento (usando LIKE para busca parcial)
     cursor.execute("""
         SELECT m.id, m.nome, m.principio_ativo, m.fabricante, m.apresentacao,
                b.id as bula_id, b.tipo_bula, b.fonte, b.data_atualizacao
