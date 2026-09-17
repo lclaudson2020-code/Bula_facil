@@ -1,0 +1,109 @@
+/* Estilos globais do corpo da página (fonte, cor de fundo, centralização) */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f4f8;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Caixa principal (card branco centralizado) */
+.container {
+    width: 100%;
+    max-width: 650px;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Alinhamento e espaçamento do cabeçalho */
+header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* Título principal da aplicação */
+h1 {
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+/* Subtítulo explicativo */
+header p {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+/* Organização lado a lado da barra de pesquisa e do botão */
+.search-box {
+    display: flex;
+    gap: 10px;
+}
+
+/* Estilização do campo de texto de busca */
+input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #bdc3c7;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+}
+
+/* Mudança de cor da borda ao focar no input */
+input:focus {
+    border-color: #3498db;
+}
+
+/* Estilização do botão de pesquisar */
+button {
+    padding: 12px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+/* Efeito de cor ao passar o mouse por cima do botão */
+button:hover {
+    background-color: #2980b9;
+}
+
+/* Card onde o resultado da busca será exibido */
+.result-card {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 8px;
+    background: #fafbfc;
+    border: 1px solid #e1e8ed;
+}
+
+/* Título do medicamento encontrado dentro do card */
+.result-card h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+/* Estilo para destacar os títulos das seções da bula (ex: Para que serve) */
+.secao-titulo {
+    font-weight: bold;
+    color: #2980b9;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+/* Rodapé do card informando a fonte oficial e a data de atualização */
+.aviso-fonte {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #95a5a6;
+    border-top: 1px solid #ecf0f1;
+    padding-top: 10px;
+}

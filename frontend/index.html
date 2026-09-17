@@ -1,0 +1,37 @@
+<!-- Declaração do tipo de documento HTML5 -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- Configuração de codificação de caracteres e responsividade para dispositivos móveis -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bula Fácil — Pesquisa de Medicamentos</title>
+    <!-- Link para o arquivo de estilos CSS externo -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Contêiner principal para centralizar e organizar o conteúdo na tela -->
+    <div class="container">
+        <!-- Cabeçalho da aplicação com título e subtítulo -->
+        <header>
+            <h1>💊 Bula Fácil</h1>
+            <p>Consulte informações de medicamentos de forma simples e segura.</p>
+        </header>
+
+        <!-- Caixa de pesquisa contendo o input de texto e o botão -->
+        <div class="search-box">
+            <!-- Campo onde o usuário digita o nome do medicamento -->
+            <input type="text" id="medicamentoInput" placeholder="Ex: Paracetamol" />
+            <!-- Botão que aciona a função JavaScript de busca -->
+            <button onclick="buscarMedicamento()">Pesquisar</button>
+        </div>
+
+        <!-- Área dinâmica onde os resultados da busca serão injetados pelo JavaScript -->
+        <div id="resultado" class="result-card">
+        </div>
+    </div>
+
+    <!-- Link para o arquivo JavaScript externo que controla a lógica da página -->
+    <script src="script.js"></script>
+</body>
+</html>
