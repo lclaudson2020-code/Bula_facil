@@ -2,42 +2,69 @@ import sqlite3
 import csv
 import os
 
-# Caminho para o banco de dados e para o arquivo CSV de amostra
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "bula_facil.db")
 CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "medicamentos_anvisa.csv")
 
-def importar_dados_anvisa():
+def importar_em_massa():
     if not os.path.exists(CSV_PATH):
-        print(f"Erro: O arquivo CSV não foi encontrado em {CSV_PATH}")
+        print(f"Erro: Ficheiro CSV não encontrado em {CSV_PATH}")
         return
 
     conexao = sqlite3.connect(DB_PATH)
     cursor = conexao.cursor()
 
-    print("Iniciando a importação do catálogo oficial...")
-    contador = 0
+    print("A limpar a base de dados anterior...")
+    cursor.execute("DELETE FROM medicamentos;")
+    conexao.commit()
 
-    # Abre o arquivo CSV utilizando codificação utf-8-sig (para aceitar acentos)
-    with open(CSV_PATH, mode='r', encoding='utf-8-sig') as arquivo_csv:
-        # O delimiter=';' indica que as colunas são separadas por ponto e vírgula
+    print("A iniciar importação em massa com tratamento robusto de cabeçalhos...")
+    
+    lote = []
+    contador_total = 0
+    tamanho_lote = 1000
+
+    with open(CSV_PATH, mode='r', encoding='latin-1') as arquivo_csv:
         leitor = csv.DictReader(arquivo_csv, delimiter=';')
         
         for linha in leitor:
-            nome = linha.get('PRODUTO', '').strip()
-            principio_ativo = linha.get('PRINCIPIO_ATIVO', '').strip()
-            fabricante = linha.get('EMPRESA', '').strip()
-            apresentacao = linha.get('APRESENTACAO', '').strip()
+            # Remove espaços e caracteres ocultos (como BOM) das chaves do dicionário
+            linha_limpa = {k.strip().replace('\ufeff', ''): (v.strip() if v else '') for k, v in linha.items() if k}
+            
+            nome = linha_limpa.get('NOME_COMERCIAL', '')
+            if not nome:
+                nome = linha_limpa.get('NOME_TECNICO', '')
+            
+            principio_ativo = linha_limpa.get('NOME_TECNICO', 'N/A')
+            
+            fabricante = linha_limpa.get('NOME_FABRICANTE', '')
+            if not fabricante:
+                fabricante = linha_limpa.get('DETENTOR_REGISTRO_CADASTRO', 'Desconhecido')
+            
+            classe_risco = linha_limpa.get('CLASSE_RISCO', '')
+            apresentacao = f"Classe de Risco: {classe_risco}" if classe_risco else "Registro Oficial Anvisa"
 
             if nome:
-                cursor.execute("""
+                lote.append((nome, principio_ativo, fabricante, apresentacao))
+                contador_total += 1
+
+            if len(lote) >= tamanho_lote:
+                cursor.executemany("""
                     INSERT INTO medicamentos (nome, principio_ativo, fabricante, apresentacao)
                     VALUES (?, ?, ?, ?)
-                """, (nome, principio_ativo, fabricante, apresentacao))
-                contador += 1
+                """, lote)
+                conexao.commit()
+                lote = []
+                print(f"Processados {contador_total} registos oficiais...")
 
-    conexao.commit()
+        if lote:
+            cursor.executemany("""
+                INSERT INTO medicamentos (nome, principio_ativo, fabricante, apresentacao)
+                VALUES (?, ?, ?, ?)
+            """, lote)
+            conexao.commit()
+
     conexao.close()
-    print(f"Sucesso! {contador} medicamentos do catálogo oficial foram salvos no SQLite.")
+    print(f"\nImportação concluída com sucesso! Total de {contador_total} registos oficiais cadastrados no SQLite.")
 
 if __name__ == "__main__":
-    importar_dados_anvisa()
+    importar_em_massa()
