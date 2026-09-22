@@ -21,6 +21,16 @@ Este projeto foi construído utilizando as seguintes tecnologias:
 
 ---
 
+## Importante
+
+O GitHub pode continuar permitindo que usuários visualizem e façam forks de um repositório público conforme seus termos, mesmo sem uma licença aberta. Isso não significa que você tenha concedido uma autorização geral para reutilizar o código. 
+
+E, como o Bula Fácil pode utilizar dados e informações da Anvisa ou bibliotecas de terceiros, lembre-se de que sua licença não substitui as licenças e condições desses materiais.
+
+Resumo: mantenha público, adicione o aviso de direitos autorais e não escolha uma licença permissiva se não quiser conceder essas permissões. Para uma licença personalizada com restrições específicas, vale consultar um profissional jurídico.
+
+---
+
 ## Como Executar o Projeto Localmente
 
 Siga os passos abaixo para rodar o projeto na sua máquina:
