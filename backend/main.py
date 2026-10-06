@@ -1,27 +1,23 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import os
+import re
+from backend.servicos.extrator_bula import extrair_secoes_bula
 
-app = FastAPI(title="Bula Fácil API", version="0.1")
+# 1. Inicializa o FastAPI no topo do ficheiro
+app = FastAPI(title="Bula Fácil API", version="0.3")
 
-# Configuração do CORS (Permite que o Frontend na porta 5500 acesse a API)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Permite requisições de qualquer origem (ótimo para desenvolvimento)
-    allow_credentials=True,
-    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc.)
-    allow_headers=["*"],  # Permite todos os headers
-)
-
-# Caminho para o banco de dados criado na pasta data/
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "bula_facil.db")
+BULAS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "bulas")
 
-def conectar():
-    """Abre conexão com o banco e configura para retornar dicionários."""
-    conexao = sqlite3.connect(DB_PATH)
-    conexao.row_factory = sqlite3.Row  # Facilita converter o resultado em JSON
-    return conexao
+def limpar_nome_para_arquivo(nome: str) -> str:
+    """Converte o nome do medicamento num formato seguro para nome de arquivo (ex: 'NEOSALDINA' -> 'neosaldina')"""
+    if not nome:
+        return ""
+    # Remove acentos, caracteres especiais e espaços extras
+    nome_limpo = nome.lower().strip()
+    nome_limpo = re.sub(r'[^a-z0-9]', '_', nome_limpo)
+    return nome_limpo
 
 @app.get("/")
 def home():
@@ -29,50 +25,46 @@ def home():
 
 @app.get("/medicamentos/{nome}")
 def buscar_medicamento(nome: str):
-    """Busca um medicamento pelo nome no banco de dados, lidando com itens que ainda não possuem bula."""
-    conexao = conectar()
+    conexao = sqlite3.connect(DB_PATH)
+    conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
 
-    # 1. Procura o medicamento
     cursor.execute("""
-        SELECT m.id, m.nome, m.principio_ativo, m.fabricante, m.apresentacao,
-               b.id as bula_id, b.tipo_bula, b.fonte, b.data_atualizacao
-        FROM medicamentos m
-        LEFT JOIN bulas b ON m.id = b.medicamento_id
-        WHERE m.nome LIKE ?
-    """, (f"%{nome}%",))
+        SELECT * FROM medicamentos 
+        WHERE nome LIKE ? OR principio_ativo LIKE ?
+        LIMIT 1
+    """, (f"%{nome}%", f"%{nome}%"))
     
-    med = cursor.fetchone()
-
-    if not med:
-        conexao.close()
-        raise HTTPException(status_code=404, detail="Medicamento não encontrado.")
-
-    # 2. Busca as seções apenas se o medicamento tiver uma bula vinculada
-    secoes = []
-    if med["bula_id"]:
-        cursor.execute("""
-            SELECT titulo, conteudo_oficial, resumo_simples
-            FROM secoes_bula
-            WHERE bula_id = ?
-        """, (med["bula_id"],))
-        secoes = [dict(row) for row in cursor.fetchall()]
-
+    registro = cursor.fetchone()
     conexao.close()
 
-    # 3. Retorna a resposta organizada
+    if not registro:
+        raise HTTPException(status_code=404, detail="Medicamento não encontrado na base da Anvisa.")
+
+    medicamento_info = dict(registro)
+    nome_medicamento = medicamento_info.get("nome", "")
+    
+    # Gera o nome esperado do arquivo PDF com base no nome do medicamento (ex: neosaldina.pdf)
+    nome_arquivo_pdf = f"{limpar_nome_para_arquivo(nome_medicamento)}.pdf"
+    caminho_pdf = os.path.join(BULAS_PATH, nome_arquivo_pdf)
+
+    dados_bula = {
+        "tipo": "Bula não cadastrada localmente",
+        "como_usar": "Indisponível no momento",
+        "esquecimento": "Indisponível no momento",
+        "superdosagem": "Indisponível no momento"
+    }
+
+    # Verifica estritamente se o PDF correspondente a ESTE medicamento existe
+    if os.path.exists(caminho_pdf):
+        secoes = extrair_secoes_bula(caminho_pdf)
+        if secoes:
+            dados_bula = {
+                "tipo": f"Bula oficial extraída com sucesso",
+                **secoes
+            }
+
     return {
-        "medicamento": {
-            "id": med["id"],
-            "nome": med["nome"],
-            "principio_ativo": med["principio_ativo"],
-            "fabricante": med["fabricante"],
-            "apresentacao": med["apresentacao"]
-        },
-        "bula": {
-            "tipo": med["tipo_bula"] if med["bula_id"] else "Bula não cadastrada",
-            "fonte": med["fonte"] if med["bula_id"] else "Catálogo Anvisa (Dados Gerais)",
-            "data_atualizacao": med["data_atualizacao"] if med["bula_id"] else "N/A",
-            "secoes": secoes
-        }
+        "medicamento": medicamento_info,
+        "bula": dados_bula
     }
